@@ -1,0 +1,25 @@
+services:
+  server:
+    image: ghcr.io/felipear89/my-chat-server:latest
+    restart: unless-stopped
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+    volumes:
+      - chroma_data:/app/data/chroma
+    expose:
+      - "2024"
+
+  web:
+    image: ghcr.io/felipear89/my-chat-web:latest
+    restart: unless-stopped
+    environment:
+      LANGGRAPH_API_URL: http://server:2024
+      LANGCHAIN_API_KEY: ""
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+volumes:
+  chroma_data:
