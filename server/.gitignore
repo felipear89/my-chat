@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 data/
 .langgraph_api/
+.idea/vcs.xml
