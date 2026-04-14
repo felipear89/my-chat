@@ -25,6 +25,26 @@ export const getThreadState = async (
   return client.threads.getState(threadId);
 };
 
+export const listThreads = async () => {
+  const client = createClient();
+  return client.threads.search({ limit: 100 });
+};
+
+export const fetchThread = async (threadId: string) => {
+  const client = createClient();
+  return client.threads.get(threadId);
+};
+
+export const deleteThread = async (threadId: string) => {
+  const client = createClient();
+  return client.threads.delete(threadId);
+};
+
+export const updateThreadTitle = async (threadId: string, title: string) => {
+  const client = createClient();
+  return client.threads.update(threadId, { metadata: { title } });
+};
+
 export const sendMessage = async (params: {
   threadId: string;
   messages?: LangChainMessage[];

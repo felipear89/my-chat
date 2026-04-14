@@ -1,6 +1,9 @@
+import os
+
 from langchain_core.documents import Document
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.messages import SystemMessage
+from langchain_openai import ChatOpenAI
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -12,9 +15,14 @@ class State(TypedDict):
     context: list[Document]
 
 
-llm = ChatOpenAI(model="gpt-4o-mini", streaming=True)
+llm = ChatOpenAI(
+    model=os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ["OPENROUTER_API_KEY"],
+    streaming=True,
+)
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = Chroma(
     collection_name="documents",
     embedding_function=embeddings,
