@@ -1,0 +1,5 @@
+all:
+  hosts:
+    my-chat:
+      ansible_host: 161.35.100.178
+      ansible_user: root

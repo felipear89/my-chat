@@ -3,11 +3,11 @@ import os
 from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
+
+from agent.vectorstore import get_vectorstore
 
 
 class State(TypedDict):
@@ -22,13 +22,7 @@ llm = ChatOpenAI(
     streaming=True,
 )
 
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-vectorstore = Chroma(
-    collection_name="documents",
-    embedding_function=embeddings,
-    persist_directory="./data/chroma",
-)
-retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+retriever = get_vectorstore().as_retriever(search_kwargs={"k": 4})
 
 
 def retrieve(state: State) -> dict:

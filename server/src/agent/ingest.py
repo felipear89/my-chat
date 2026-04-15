@@ -16,13 +16,12 @@ from langchain_community.document_loaders import (
     TextLoader,
     UnstructuredWordDocumentLoader,
 )
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from agent.vectorstore import get_vectorstore, delete_by_source
 
 load_dotenv()
 
-CHROMA_DIR = "./data/chroma"
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
@@ -62,12 +61,10 @@ def ingest(path: str):
     chunks = splitter.split_documents(docs)
     print(f"Split into {len(chunks)} chunks")
 
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorstore = Chroma(
-        collection_name="documents",
-        embedding_function=embeddings,
-        persist_directory=CHROMA_DIR,
-    )
+    print(f"Removing existing chunks for: {target}")
+    delete_by_source(str(target))
+
+    vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
     print(f"Ingested {len(chunks)} chunks into the vector store.")
 

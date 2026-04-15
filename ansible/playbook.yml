@@ -1,0 +1,44 @@
+- name: Set up my-chat server
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: [git, curl]
+        state: present
+        update_cache: true
+
+    - name: Install Docker
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Clone repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        force: true
+
+    - name: Create volume mount directory
+      file:
+        path: /mnt/my-chat-data/chroma
+        state: directory
+
+    - name: Copy .env file
+      copy:
+        src: .env
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+
+    - name: Install systemd service
+      template:
+        src: templates/my-chat.service.j2
+        dest: /etc/systemd/system/my-chat.service
+
+    - name: Enable and start service
+      systemd:
+        name: my-chat
+        enabled: true
+        state: restarted
+        daemon_reload: true
