@@ -2,9 +2,11 @@ import os
 
 from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode, tools_condition
 from typing_extensions import Annotated, TypedDict
 
 from agent.vectorstore import get_vectorstore
@@ -22,11 +24,21 @@ llm = ChatOpenAI(
     streaming=True,
 )
 
-retriever = get_vectorstore().as_retriever(search_kwargs={"k": 4})
+@tool
+def sync_dropbox() -> str:
+    """Sync all documents from Dropbox to the vector database.
+    Use this when the user asks to sync, refresh, or update the documents."""
+    from agent.dropbox_sync import start_dropbox_sync
+    start_dropbox_sync()
+    return "Dropbox sync started in the background. All documents will be updated shortly."
+
+
+llm_with_tools = llm.bind_tools([sync_dropbox])
 
 
 def retrieve(state: State) -> dict:
     latest_message = state["messages"][-1]
+    retriever = get_vectorstore().as_retriever(search_kwargs={"k": 4})
     docs = retriever.invoke(latest_message.content)
     return {"context": docs}
 
@@ -43,15 +55,18 @@ def generate(state: State) -> dict:
         )
     )
 
-    response = llm.invoke([system_message] + state["messages"])
+    response = llm_with_tools.invoke([system_message] + state["messages"])
     return {"messages": [response]}
 
 
 builder = StateGraph(State)
 builder.add_node("retrieve", retrieve)
 builder.add_node("generate", generate)
+builder.add_node("tools", ToolNode([sync_dropbox]))
+
 builder.add_edge(START, "retrieve")
 builder.add_edge("retrieve", "generate")
-builder.add_edge("generate", END)
+builder.add_conditional_edges("generate", tools_condition)
+builder.add_edge("tools", END)
 
 graph = builder.compile()

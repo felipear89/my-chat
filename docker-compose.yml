@@ -5,11 +5,8 @@ services:
     environment:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
-      VECTOR_STORE: ${VECTOR_STORE:-chroma}
-      QDRANT_URL: ${QDRANT_URL:-}
-      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
-    volumes:
-      - chroma_data:/app/data/chroma
+      QDRANT_URL: ${QDRANT_URL}
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
     expose:
       - "2024"
 
@@ -23,6 +20,3 @@ services:
       - "3000:3000"
     depends_on:
       - server
-
-volumes:
-  chroma_data:
