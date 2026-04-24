@@ -67,10 +67,11 @@ export const langGraphAdapter = {
   },
 
   async generateTitle(
-    _remoteId: string,
+    remoteId: string,
     messages: readonly ThreadMessage[],
   ) {
     const title = getTitleFromMessages(messages);
+    await updateThreadTitle(remoteId, title);
     return createAssistantStream((controller) => {
       controller.appendText(title);
       controller.close();
