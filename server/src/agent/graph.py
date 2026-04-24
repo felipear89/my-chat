@@ -48,9 +48,10 @@ def generate(state: State) -> dict:
 
     system_message = SystemMessage(
         content=(
-            "You are a helpful teaching assistant. "
+            "You are a helpful teaching assistant specialized in construction management and project management. "
             "Use the context below to answer the student's question. "
-            "If the context is not relevant, answer from your general knowledge.\n\n"
+            "If the context is not relevant or not related to your specialization, say that you cannot answer based on the provided context. "
+            "Provide clear and concise explanations.\n\n"
             f"Context:\n{context_text}"
         )
     )
