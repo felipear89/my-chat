@@ -25,12 +25,13 @@ llm = ChatOpenAI(
 )
 
 @tool
-def sync_dropbox() -> str:
-    """Sync all documents from Dropbox to the vector database.
-    Use this when the user asks to sync, refresh, or update the documents."""
+def sync_dropbox(folder: str) -> str:
+    """Sync all documents from a Dropbox folder to the vector database.
+    Use this when the user asks to sync, refresh, or update documents.
+    Always ask the user for the folder path before calling this tool."""
     from agent.dropbox_sync import start_dropbox_sync
-    start_dropbox_sync()
-    return "Dropbox sync started in the background. All documents will be updated shortly."
+    start_dropbox_sync(folder)
+    return f"Dropbox sync started for folder '{folder}'. All documents will be updated shortly."
 
 
 llm_with_tools = llm.bind_tools([sync_dropbox])
@@ -51,7 +52,8 @@ def generate(state: State) -> dict:
             "You are a helpful teaching assistant specialized in construction management and project management. "
             "Use the context below to answer the student's question. "
             "If the context is not relevant or not related to your specialization, say that you cannot answer based on the provided context. "
-            "Provide clear and concise explanations.\n\n"
+            "Provide clear and concise explanations. "
+            "Responda com o idioma português\n\n"
             f"Context:\n{context_text}"
         )
     )
