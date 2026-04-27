@@ -1,8 +1,25 @@
+import base64
 import logging
 import os
 import threading
 
+import requests
+
 logger = logging.getLogger(__name__)
+
+
+def _get_access_token() -> str:
+    credentials = base64.b64encode(
+        f"{os.environ['DROPBOX_APP_KEY']}:{os.environ['DROPBOX_APP_SECRET']}".encode()
+    ).decode()
+    resp = requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        headers={"Authorization": f"Basic {credentials}"},
+        data={"grant_type": "refresh_token", "refresh_token": os.environ["DROPBOX_REFRESH_TOKEN"]},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
 
 
 def _sync(folder: str) -> None:
@@ -21,7 +38,7 @@ def _sync(folder: str) -> None:
 
         # Load all files from the Dropbox folder
         loader = DropboxLoader(
-            dropbox_access_token=os.environ["DROPBOX_ACCESS_TOKEN"],
+            dropbox_access_token=_get_access_token(),
             dropbox_folder_path=folder,
             recursive=True,
         )
