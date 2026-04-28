@@ -22,6 +22,7 @@ llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=os.environ["OPENROUTER_API_KEY"],
     streaming=True,
+    temperature=0,
 )
 
 @tool
@@ -47,24 +48,49 @@ llm_with_tools = llm.bind_tools([sync_dropbox, list_dropbox])
 
 
 def retrieve(state: State) -> dict:
-    latest_message = state["messages"][-1]
-    retriever = get_vectorstore().as_retriever(search_kwargs={"k": 4})
-    docs = retriever.invoke(latest_message.content)
+    messages = state["messages"]
+    recent_texts = [
+        m.content for m in messages[-2:]
+        if hasattr(m, "content") and isinstance(m.content, str)
+    ]
+    query = " ".join(recent_texts)
+    retriever = get_vectorstore().as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 10, "score_threshold": 0.1},
+    )
+    docs = retriever.invoke(query)
     return {"context": docs}
 
 
 def generate(state: State) -> dict:
-    context_text = "\n\n".join(doc.page_content for doc in state.get("context", []))
+    docs = state.get("context", [])
+    if docs:
+        context_parts = []
+        for i, doc in enumerate(docs, 1):
+            source = doc.metadata.get("source", "documento")
+            context_parts.append(f"[{i}] Fonte: {source}\n{doc.page_content}")
+        context_text = "\n\n".join(context_parts)
+        context_instruction = (
+            "Use APENAS o contexto numerado abaixo para responder. "
+            "Se a resposta não estiver no contexto, diga que não encontrou nos materiais disponíveis. "
+            "Cite o número da fonte (ex: [1]) quando usar um trecho."
+        )
+        context_block = f"\n\nContexto:\n{context_text}"
+    else:
+        context_instruction = (
+            "Não há materiais específicos disponíveis para esta pergunta. "
+            "Responda com base no seu conhecimento geral sobre gerenciamento de construção e projetos, "
+            "deixando claro que não há documentação de suporte."
+        )
+        context_block = ""
 
     system_message = SystemMessage(
         content=(
-            "You are a helpful teaching assistant specialized in construction management and project management. "
-            "Use the context below to answer the student's question. "
-            "If the context is not relevant or not related to your specialization, say that you cannot answer based on the provided context. "
-            "Provide clear and concise explanations. "
-            "When you have used a tool and received its result, always present that result clearly and completely in your text response so the user can read it directly. "
-            "Responda com o idioma português\n\n"
-            f"Context:\n{context_text}"
+            "Você é um assistente de ensino especializado em gerenciamento de construção e projetos. "
+            f"{context_instruction} "
+            "Forneça explicações claras e objetivas. "
+            "Quando usar uma ferramenta e receber seu resultado, apresente-o completamente na sua resposta. "
+            f"{context_block}"
         )
     )
 

@@ -5,7 +5,7 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, Filter, FieldCondition, MatchValue, VectorParams
 
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
 COLLECTION = "documents"
 
 
@@ -22,7 +22,7 @@ def get_vectorstore() -> QdrantVectorStore:
     if COLLECTION not in existing:
         client.create_collection(
             collection_name=COLLECTION,
-            vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+            vectors_config=VectorParams(size=768, distance=Distance.COSINE),
         )
     return QdrantVectorStore(client=client, collection_name=COLLECTION, embedding=embeddings)
 
