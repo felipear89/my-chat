@@ -71,16 +71,15 @@ def generate(state: State) -> dict:
             context_parts.append(f"[{i}] Fonte: {source}\n{doc.page_content}")
         context_text = "\n\n".join(context_parts)
         context_instruction = (
-            "Use APENAS o contexto numerado abaixo para responder. "
-            "Se a resposta não estiver no contexto, diga que não encontrou nos materiais disponíveis. "
-            "Cite o número da fonte (ex: [1]) quando usar um trecho."
+            "Use o contexto numerado abaixo como fonte principal para responder. "
+            "Cite o número da fonte (ex: [1]) quando usar um trecho do contexto. "
+            "Se o contexto não cobrir completamente a pergunta, complemente com seu conhecimento geral sobre gerenciamento de construção e projetos."
         )
         context_block = f"\n\nContexto:\n{context_text}"
     else:
         context_instruction = (
             "Não há materiais específicos disponíveis para esta pergunta. "
-            "Responda com base no seu conhecimento geral sobre gerenciamento de construção e projetos, "
-            "deixando claro que não há documentação de suporte."
+            "Responda com base no seu conhecimento geral sobre gerenciamento de construção e projetos."
         )
         context_block = ""
 
