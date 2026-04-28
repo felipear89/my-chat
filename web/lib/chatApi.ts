@@ -13,9 +13,19 @@ const createClient = () => {
   });
 };
 
+export const getUserId = (): string => {
+  const key = "chat_user_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+};
+
 export const createThread = async () => {
   const client = createClient();
-  return client.threads.create();
+  return client.threads.create({ metadata: { userId: getUserId() } });
 };
 
 export const getThreadState = async (
@@ -27,7 +37,7 @@ export const getThreadState = async (
 
 export const listThreads = async () => {
   const client = createClient();
-  return client.threads.search({ limit: 100 });
+  return client.threads.search({ metadata: { userId: getUserId() }, limit: 100 });
 };
 
 export const fetchThread = async (threadId: string) => {

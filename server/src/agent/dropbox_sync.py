@@ -66,3 +66,35 @@ def start_dropbox_sync(folder: str) -> None:
     """Start the Dropbox sync in a background thread."""
     thread = threading.Thread(target=_sync, args=(folder,), daemon=True)
     thread.start()
+
+
+def list_dropbox_files(folder: str) -> str:
+    import dropbox
+
+    token = _get_access_token()
+    dbx = dropbox.Dropbox(token)
+
+    path = "/docs" if folder in ("/", "") else "/docs" + folder
+    result = dbx.files_list_folder(path, recursive=True)
+    entries = list(result.entries)
+    while result.has_more:
+        result = dbx.files_list_folder_continue(result.cursor)
+        entries.extend(result.entries)
+
+    folders = sorted(
+        e.path_display for e in entries if isinstance(e, dropbox.files.FolderMetadata)
+    )
+    files = sorted(
+        e.path_display for e in entries if isinstance(e, dropbox.files.FileMetadata)
+    )
+
+    lines = []
+    if folders:
+        lines.append("Folders:")
+        lines.extend(f"  {f}" for f in folders)
+    if files:
+        lines.append("Files:")
+        lines.extend(f"  {f}" for f in files)
+    if not lines:
+        return f"No files or folders found in '{folder}'."
+    return "\n".join(lines)

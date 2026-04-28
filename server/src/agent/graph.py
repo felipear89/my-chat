@@ -34,7 +34,16 @@ def sync_dropbox(folder: str) -> str:
     return f"Dropbox sync started for folder '{folder}'. All documents will be updated shortly."
 
 
-llm_with_tools = llm.bind_tools([sync_dropbox])
+@tool
+def list_dropbox(folder: str) -> str:
+    """List all folders and files in a Dropbox folder.
+    Use this when the user wants to see what files or folders exist in Dropbox.
+    Use '/' to list the root folder."""
+    from agent.dropbox_sync import list_dropbox_files
+    return list_dropbox_files(folder)
+
+
+llm_with_tools = llm.bind_tools([sync_dropbox, list_dropbox])
 
 
 def retrieve(state: State) -> dict:
@@ -53,6 +62,7 @@ def generate(state: State) -> dict:
             "Use the context below to answer the student's question. "
             "If the context is not relevant or not related to your specialization, say that you cannot answer based on the provided context. "
             "Provide clear and concise explanations. "
+            "When you have used a tool and received its result, always present that result clearly and completely in your text response so the user can read it directly. "
             "Responda com o idioma português\n\n"
             f"Context:\n{context_text}"
         )
@@ -65,11 +75,11 @@ def generate(state: State) -> dict:
 builder = StateGraph(State)
 builder.add_node("retrieve", retrieve)
 builder.add_node("generate", generate)
-builder.add_node("tools", ToolNode([sync_dropbox]))
+builder.add_node("tools", ToolNode([sync_dropbox, list_dropbox]))
 
 builder.add_edge(START, "retrieve")
 builder.add_edge("retrieve", "generate")
 builder.add_conditional_edges("generate", tools_condition)
-builder.add_edge("tools", END)
+builder.add_edge("tools", "generate")
 
 graph = builder.compile()
